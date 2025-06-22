@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">My Dream Place Wishlist</string>
+
+    <!-- Sample data for the Dream Place Item -->
+    <string name="sample_place_name">Sigiriya Rock Fortress</string>
+    <string name="sample_city">Dambulla</string>
+    <string name="sample_distance">25 km</string>
+    <string name="sample_rating">4.5</string>
+    <string name="visited_text">Visited</string>
+
+    <string name="guest_greeting">Hi, Guest!\n%1$s</string>
+    <string name="user_greeting">Hi, %1$s!\n%2$s</string>
+
+    <!-- Firebase -->
+    <string name="default_web_client_id">876274663474-eeivfavlrajsv1gq38cnf6vfthn99vml.apps.googleusercontent.com</string>
+</resources>

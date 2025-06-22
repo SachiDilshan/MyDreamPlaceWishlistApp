@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Neutrals -->
+    <color name="white">#FFFFFF</color>
+    <color name="dark_grey">#616161</color>
+    <color name="light_gray">#F0F0F0</color>
+    <color name="black">#000000</color>
+    <color name="background">#D9FFDA</color>
+
+    <!-- Theme Colors -->
+    <color name="primary_green">#4CAF50</color> <!-- Material Green 500 -->
+    <color name="button_green">#EE66BB6A</color> <!-- Material Green 400 -->
+
+    <!-- Others -->
+    <color name="visited_green">#388E3C</color> <!-- Darker green -->
+    <color name="star_orange">#FFA726</color> <!-- Material Orange 400 -->
+</resources>

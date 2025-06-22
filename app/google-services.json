@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "876274663474",
+    "project_id": "my-dream-place-wishlist-app",
+    "storage_bucket": "my-dream-place-wishlist-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876274663474:android:2d091da2045b70fb90bc2b",
+        "android_client_info": {
+          "package_name": "com.s92086882.mydreamplacewishlist"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "876274663474-uemjm803sj5dff3i8ekcc0s94cb70h6n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.s92086882.mydreamplacewishlist",
+            "certificate_hash": "77bd0a8a6a6dcee10349b9f369234327bdc77889"
+          }
+        },
+        {
+          "client_id": "876274663474-eeivfavlrajsv1gq38cnf6vfthn99vml.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDKO-hl-lg8fBumADKskIfcOhjHBGShEI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "876274663474-eeivfavlrajsv1gq38cnf6vfthn99vml.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

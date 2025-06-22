@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white">
+
+    <!-- Toolbar -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background"
+        android:paddingTop="20dp"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light">
+
+        <TextView
+            android:id="@+id/toolbarTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Dream Place"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:layout_gravity="center" />
+    </com.google.android.material.appbar.MaterialToolbar>
+
+    <!-- Content -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <!-- Pick Location -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp"
+                android:layout_marginTop="10dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Pick Location:" />
+
+                <ImageButton
+                    android:id="@+id/locationPickerButton"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+
+                    android:layout_marginEnd="150dp"
+                    android:background="@null"
+                    android:contentDescription="Pick Location"
+                    android:src="@drawable/ic_location" />
+            </LinearLayout>
+
+            <!-- Place Name -->
+            <EditText
+                android:id="@+id/placeNameEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Place"
+                android:inputType="text"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- City -->
+            <EditText
+                android:id="@+id/cityEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="City"
+                android:inputType="text"
+                android:padding="12dp"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Add Photos -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Photos:"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/photoRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp" />
+
+            <Button
+                android:id="@+id/addPhotoButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add Photo"
+                android:backgroundTint="@color/button_green"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Notes -->
+            <EditText
+                android:id="@+id/notesEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="4"
+                android:maxLines="10"
+                android:gravity="top"
+                android:hint="Notes"
+                android:inputType="textMultiLine"
+                android:background="@android:drawable/edit_text"
+                android:padding="12dp"
+                android:layout_marginBottom="24dp" />
+
+            <!-- Add Dream Place Button -->
+            <Button
+                android:id="@+id/addPlaceButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add Dream Place"
+                android:backgroundTint="@color/button_green"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
