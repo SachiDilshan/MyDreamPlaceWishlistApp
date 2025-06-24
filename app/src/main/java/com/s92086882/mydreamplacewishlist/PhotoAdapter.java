@@ -19,10 +19,19 @@ import java.util.List;
  */
 public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder> {
 
-    private final List<Uri> photoUris; // For guest users: internal file URIs or original content URIs
+    private final List<Uri> photoUris;
+    private OnPhotoClickListener listener;
 
     public PhotoAdapter(List<Uri> photoUris) {
         this.photoUris = photoUris;
+    }
+
+    public interface OnPhotoClickListener {
+        void onPhotoClick(int position, Uri photoUri);
+    }
+
+    public void setOnPhotoClickListener(OnPhotoClickListener listener) {
+        this.listener = listener;
     }
 
     @NonNull
@@ -37,17 +46,15 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHol
     public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
         Uri uri = photoUris.get(position);
 
-        if (uri.getScheme() != null && uri.getScheme().equals("file")) {
-            // File-based URI from internal storage
-            Glide.with(holder.imageView.getContext())
-                    .load(new File(uri.getPath()))
-                    .into(holder.imageView);
-        } else {
-            // Content URI or remote URI
-            Glide.with(holder.imageView.getContext())
-                    .load(uri)
-                    .into(holder.imageView);
-        }
+        Glide.with(holder.imageView.getContext())
+                .load("file".equals(uri.getScheme()) ? new File(uri.getPath()) : uri)
+                .into(holder.imageView);
+
+        holder.imageView.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onPhotoClick(position, uri);
+            }
+        });
     }
 
     @Override

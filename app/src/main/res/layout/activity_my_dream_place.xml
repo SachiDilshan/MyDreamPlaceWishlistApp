@@ -29,6 +29,14 @@
             android:layout_gravity="center" />
     </com.google.android.material.appbar.MaterialToolbar>
 
+    <!-- Shadow view -->
+    <View
+        android:id="@+id/shadowView"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/shadow_bottom" />
+
     <!-- Scrollable content -->
     <ScrollView
         android:layout_width="match_parent"
@@ -83,6 +91,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:orientation="horizontal"
+                android:background="#E5EDDB"
                 android:layout_marginBottom="16dp" />
 
             <!-- Notes -->

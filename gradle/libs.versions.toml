@@ -15,10 +15,13 @@ material = "1.12.0"
 activity = "1.10.1"
 constraintlayout = "2.2.1"
 materialVersion = "1.11.0"
+photoeditor = "1.6.0"
+photoview = "2.3.0"
 places = "4.3.1"
 playServicesAuth = "21.3.0"
 playServicesLocation = "21.3.0"
 playServicesMaps = "19.2.0"
+recyclerviewSwipedecorator = "1.3"
 
 [libraries]
 cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
@@ -38,10 +41,13 @@ material = { group = "com.google.android.material", name = "material", version.r
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 material-v1110 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
+photoeditor = { module = "io.github.burhanrashid52:photoeditor", version.ref = "photoeditor" }
+photoview = { group = "com.github.chrisbanes", name = "PhotoView", version = "2.3.0" }
 places = { module = "com.google.android.libraries.places:places", version.ref = "places" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
+recyclerview-swipedecorator = { module = "it.xabaras.android:recyclerview-swipedecorator", version.ref = "recyclerviewSwipedecorator" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

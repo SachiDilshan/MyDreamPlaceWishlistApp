@@ -3,8 +3,13 @@ package com.s92086882.mydreamplacewishlist;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Model class representing a Dream Place entry.
+ * Used for both Firestore (logged-in users) and SQLite (guest users).
+ */
 public class DreamPlace implements Serializable {
-    private String id; // Firestore document ID
+
+    private String id; // Firestore document ID or SQLite row ID (as string)
     private String name;
     private String city;
     private String notes;
@@ -13,9 +18,7 @@ public class DreamPlace implements Serializable {
     private float rating;
     private double latitude;
     private double longitude;
-    private String distance;
-    private double lat;
-    private double lng;
+    private String distance; // e.g., "2.5 km away"
 
     // Full Constructor
     public DreamPlace(List<String> photoPaths, String name, String city, String distance,
@@ -32,34 +35,66 @@ public class DreamPlace implements Serializable {
     }
 
     // Getters
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getCity() { return city; }
-    public String getNotes() { return notes; }
-    public List<String> getPhotoPaths() { return photoPaths; }
-    public boolean isVisited() { return visited; }
-    public float getRating() { return rating; }
-    public double getLatitude() { return latitude; }
-    public double getLongitude() { return longitude; }
-    public String getDistance() { return distance; }
-
-    // Setters
-    public void setId(String id) { this.id = id; }
-    public void setName(String name) { this.name = name; }
-    public void setCity(String city) { this.city = city; }
-    public void setNotes(String notes) { this.notes = notes; }
-    public void setPhotoPaths(List<String> photoPaths) { this.photoPaths = photoPaths; }
-    public void setVisited(boolean visited) { this.visited = visited; }
-    public void setRating(float rating) { this.rating = rating; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
-    public void setDistance(String distance) { this.distance = distance; }
-
-    public double getLat() {
-        return lat;
+    public String getId() {
+        return id;
+    }
+    public String getName() {
+        return name;
+    }
+    public String getCity() {
+        return city;
+    }
+    public String getNotes() {
+        return notes;
+    }
+    public List<String> getPhotoPaths() {
+        return photoPaths;
+    }
+    public boolean isVisited() {
+        return visited;
+    }
+    public float getRating() {
+        return rating;
+    }
+    public double getLatitude() {
+        return latitude;
+    }
+    public double getLongitude() {
+        return longitude;
+    }
+    public String getDistance() {
+        return distance;
     }
 
-    public double getLng() {
-        return lng;
+    // Setters
+    public void setId(String id) {
+        this.id = id;
+    }
+    public void setName(String name) {
+        this.name = name;
+    }
+    public void setCity(String city) {
+        this.city = city;
+    }
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+    public void setPhotoPaths(List<String> photoPaths) {
+        this.photoPaths = photoPaths;
+    }
+    public void setVisited(boolean visited) {
+        this.visited = visited;
+    }
+    public void setRating(float rating) {
+        this.rating = rating;
+    }
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
+    }
+    public void setDistance(String distance) {
+        this.distance = distance;
     }
 }

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
+import java.util.Iterator;
 import java.util.List;
 
 public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.ViewHolder> {
@@ -44,26 +45,24 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         DreamPlace place = dreamPlaceList.get(position);
 
-        // Load first photo
+        // Load the first photo using Glide or show placeholder if unavailable
         if (place.getPhotoPaths() != null && !place.getPhotoPaths().isEmpty()) {
             String photo = place.getPhotoPaths().get(0);
-            try {
-                Glide.with(context)
-                        .load(Uri.parse(photo))
-                        .diskCacheStrategy(DiskCacheStrategy.ALL)
-                        .placeholder(R.drawable.ic_launcher_background)
-                        .into(holder.imageViewPlace);
-            } catch (Exception e) {
-                holder.imageViewPlace.setImageResource(R.drawable.ic_launcher_background);
-            }
+            Glide.with(context)
+                    .load(Uri.parse(photo))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .placeholder(R.drawable.ic_launcher_background)
+                    .error(R.drawable.ic_launcher_background)
+                    .into(holder.imageViewPlace);
         } else {
             holder.imageViewPlace.setImageResource(R.drawable.ic_launcher_background);
         }
 
+        // Set place name and city
         holder.textViewPlaceName.setText(place.getName());
         holder.textViewCity.setText(place.getCity());
 
-        // Show distance
+        // Set distance text if available
         if (place.getDistance() != null && !place.getDistance().isEmpty()) {
             holder.textViewDistance.setText(place.getDistance());
             holder.textViewDistance.setVisibility(View.VISIBLE);
@@ -71,7 +70,7 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
             holder.textViewDistance.setVisibility(View.GONE);
         }
 
-        // Visited + Rating
+        // Show visited tag and rating if visited is true
         if (place.isVisited()) {
             holder.visitedContainer.setVisibility(View.VISIBLE);
             holder.textViewVisited.setText("Visited");
@@ -83,7 +82,7 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
             holder.ratingContainer.setVisibility(View.GONE);
         }
 
-        // Click handler
+        // Set item click listener to launch detail view
         holder.itemView.setOnClickListener(v -> listener.onItemClick(place));
     }
 
@@ -92,11 +91,30 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
         return dreamPlaceList.size();
     }
 
+    // Used to refresh list data from HomeFragment
     public void updateList(List<DreamPlace> updatedList) {
         this.dreamPlaceList = updatedList;
         notifyDataSetChanged();
     }
 
+    // Used to remove a place from list by Firestore document ID
+    public void removePlaceById(String placeId) {
+        if (placeId == null) return;
+        Iterator<DreamPlace> iterator = dreamPlaceList.iterator();
+        int index = 0;
+
+        while (iterator.hasNext()) {
+            DreamPlace place = iterator.next();
+            if (placeId.equals(place.getId())) {
+                iterator.remove();
+                notifyItemRemoved(index);
+                break;
+            }
+            index++;
+        }
+    }
+
+    // ViewHolder class to reference item_dream_place views
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewPlace, iconVisited, iconStar;
         TextView textViewPlaceName, textViewCity, textViewDistance, textViewVisited, textViewRating;

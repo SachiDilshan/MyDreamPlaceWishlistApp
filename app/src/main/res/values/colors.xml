@@ -5,6 +5,7 @@
     <color name="dark_grey">#616161</color>
     <color name="light_gray">#F0F0F0</color>
     <color name="black">#000000</color>
+    <color name="red">#F44336</color>
     <color name="background">#D9FFDA</color>
 
     <!-- Theme Colors -->

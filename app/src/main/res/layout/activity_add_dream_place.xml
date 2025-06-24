@@ -14,6 +14,7 @@
         android:layout_height="wrap_content"
         android:background="@color/background"
         android:paddingTop="20dp"
+        android:elevation="12dp"
         app:navigationIcon="@drawable/ic_arrow_back"
         app:popupTheme="@style/ThemeOverlay.MaterialComponents.Light">
 
@@ -27,6 +28,14 @@
             android:textColor="@android:color/black"
             android:layout_gravity="center" />
     </com.google.android.material.appbar.MaterialToolbar>
+
+    <!-- Shadow view -->
+    <View
+        android:id="@+id/shadowView"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/shadow_bottom" />
 
     <!-- Content -->
     <ScrollView
@@ -57,9 +66,8 @@
 
                 <ImageButton
                     android:id="@+id/locationPickerButton"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-
+                    android:layout_width="70dp"
+                    android:layout_height="75dp"
                     android:layout_marginEnd="150dp"
                     android:background="@null"
                     android:contentDescription="Pick Location"
@@ -97,8 +105,9 @@
                 android:id="@+id/photoRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp" />
+                android:layout_marginBottom="16dp"
+                android:background="#E5EDDB"
+                android:orientation="horizontal" />
 
             <Button
                 android:id="@+id/addPhotoButton"

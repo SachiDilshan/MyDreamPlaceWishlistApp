@@ -5,13 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,11 +30,13 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
+import it.xabaras.android.recyclerview.swipedecorator.RecyclerViewSwipeDecorator;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -49,17 +53,23 @@ public class HomeFragment extends Fragment {
 
     private double currentLat = 0.0, currentLng = 0.0;
     private boolean locationLoaded = false;
+    private ProgressBar progressBar;
 
     private FusedLocationProviderClient fusedLocationClient;
 
-    // Request location permission result handler
+    // Activity result launcher for returning from detail screen
+    private final ActivityResultLauncher<Intent> dreamPlaceLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> loadData()
+    );
+
+    // Request permission launcher for location
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
-                if (isGranted) {
-                    fetchLiveLocation(); // If granted, fetch location
-                } else {
+                if (isGranted) fetchLiveLocation();
+                else {
                     Toast.makeText(getContext(), "Location permission is required to sort places by distance", Toast.LENGTH_LONG).show();
-                    loadData(); // Still load data without sorting
+                    loadData();
                 }
             });
 
@@ -67,28 +77,29 @@ public class HomeFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        // Set status bar text to dark on light backgrounds
+        // Light status bar text
         requireActivity().getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
-        // Initialize fused location client
+        progressBar = view.findViewById(R.id.progressBar);
+        progressBar.bringToFront();
+
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
-        // Greeting logic
+        // Greeting section
         TextView greetingText = view.findViewById(R.id.greetingText);
         ImageView avatarIcon = view.findViewById(R.id.avatarIcon);
         String greetingTime = getGreetingMessage();
 
-        // Determine if user is guest
+        // Detect login type
         SharedPreferences prefs = requireContext().getSharedPreferences("auth", Context.MODE_PRIVATE);
         isGuest = prefs.getBoolean("isGuest", true);
 
-        if (isGuest) {
-            greetingText.setText(getString(R.string.guest_greeting, greetingTime));
-        } else {
+        // Set greeting
+        if (isGuest) greetingText.setText(getString(R.string.guest_greeting, greetingTime));
+        else {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user != null) {
                 FirebaseFirestore.getInstance().collection("users")
@@ -96,55 +107,125 @@ public class HomeFragment extends Fragment {
                         .get()
                         .addOnSuccessListener(doc -> {
                             String firstName = doc.getString("firstName");
-                            if (firstName != null && !firstName.isEmpty()) {
+                            if (firstName != null && !firstName.isEmpty())
                                 greetingText.setText(getString(R.string.user_greeting, firstName, greetingTime));
-                            } else {
-                                greetingText.setText(greetingTime);
-                            }
+                            else greetingText.setText(greetingTime);
                         })
                         .addOnFailureListener(e -> greetingText.setText(greetingTime));
-            } else {
-                greetingText.setText(greetingTime);
-            }
+            } else greetingText.setText(greetingTime);
         }
 
-        // Avatar click to login (for guest only)
+        // Avatar click redirects guest to login
         avatarIcon.setOnClickListener(v -> {
-            if (isGuest) {
-                startActivity(new Intent(getContext(), LoginActivity.class));
-            }
+            if (isGuest) startActivity(new Intent(getContext(), LoginActivity.class));
         });
 
-        // Setup RecyclerView and Adapter
+        // RecyclerView setup
         recyclerView = view.findViewById(R.id.recyclerViewDreamPlaces);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new DreamPlaceAdapter(requireContext(), dreamPlaces, place -> {
             Intent intent = new Intent(getContext(), MyDreamPlaceActivity.class);
-            intent.putExtra("dreamPlace", place); // Passing full DreamPlace
-            startActivity(intent);
+            intent.putExtra("dreamPlace", place);
+            dreamPlaceLauncher.launch(intent);
         });
         recyclerView.setAdapter(adapter);
 
-        // Floating Action Button to add new Dream Place
-        FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(v -> startActivity(new Intent(getContext(), AddDreamPlaceActivity.class)));
+        // Enable swipe-to-delete gesture
+        setupSwipeToDelete();
 
-        checkLocationPermission(); // Start location permission check
+        final ActivityResultLauncher<Intent> addPlaceLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    // Reload Home data when user returns from AddDreamPlace
+                    loadData();
+                }
+        );
+
+        // FAB for adding new dream place
+        FloatingActionButton fab = view.findViewById(R.id.fab);
+        fab.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), AddDreamPlaceActivity.class);
+            addPlaceLauncher.launch(intent);
+        });
+
+        checkLocationPermission();
 
         return view;
     }
 
-    // Checks if location permission is granted, otherwise asks for it
-    private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            fetchLiveLocation();
-        } else {
-            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
+    // Enables swipe-to-delete with icon, background and text
+    private void setupSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                DreamPlace deletedPlace = dreamPlaces.get(position);
+
+                // Remove from RecyclerView and notify
+                dreamPlaces.remove(position);
+                adapter.notifyItemRemoved(position);
+
+                // Show Snackbar with Undo
+                Snackbar.make(recyclerView, "Place deleted", Snackbar.LENGTH_LONG)
+                        .setAction("Undo", v -> {
+                            // Restore on undo
+                            dreamPlaces.add(position, deletedPlace);
+                            adapter.notifyItemInserted(position);
+                        })
+                        .addCallback(new Snackbar.Callback() {
+                            @Override
+                            public void onDismissed(Snackbar snackbar, int event) {
+                                // If not undone, delete permanently
+                                if (event != Snackbar.Callback.DISMISS_EVENT_ACTION) {
+                                    if (isGuest) {
+                                        new DreamPlaceSQLiteHelper(requireContext())
+                                                .deleteDreamPlaceByName(deletedPlace.getName());
+                                    } else {
+                                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                        if (user != null) {
+                                            FirebaseFirestore.getInstance()
+                                                    .collection("users")
+                                                    .document(user.getUid())
+                                                    .collection("dream_places")
+                                                    .document(deletedPlace.getId())
+                                                    .delete();
+                                        }
+                                    }
+                                }
+                            }
+                        }).show();
+            }
+
+            @Override
+            public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
+                                    @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
+                                    int actionState, boolean isCurrentlyActive) {
+                new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+                        .addActionIcon(R.drawable.ic_delete_red)
+                        .addSwipeLeftLabel("<- Delete")
+                        .setSwipeLeftLabelColor(getResources().getColor(android.R.color.holo_red_dark))
+                        .create()
+                        .decorate();
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+        };
+        new ItemTouchHelper(callback).attachToRecyclerView(recyclerView);
     }
 
-    // Fetch user’s current location using FusedLocationProviderClient
+
+    // Check and request location permission if not already granted
+    private void checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) fetchLiveLocation();
+        else locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+    }
+
+    // Fetch live GPS location to calculate distances
     private void fetchLiveLocation() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -157,10 +238,7 @@ public class HomeFragment extends Fragment {
                 currentLat = location.getLatitude();
                 currentLng = location.getLongitude();
                 locationLoaded = true;
-                Log.d("HomeFragment", "Lat: " + currentLat + ", Lng: " + currentLng);
-            } else {
-                Toast.makeText(getContext(), "Unable to fetch current location", Toast.LENGTH_SHORT).show();
-            }
+            } else Toast.makeText(getContext(), "Unable to fetch current location", Toast.LENGTH_SHORT).show();
             loadData();
         }).addOnFailureListener(e -> {
             Toast.makeText(getContext(), "Error getting location: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -168,21 +246,23 @@ public class HomeFragment extends Fragment {
         });
     }
 
-    // Loads DreamPlaces based on login status
+    // Load dream place data from Firestore or SQLite based on user type
     private void loadData() {
         if (!isAdded()) return;
-        if (isGuest) {
-            loadFromSQLite();
-        } else {
-            loadFromFirestore();
-        }
+        if (progressBar != null) {
+            progressBar.setVisibility(View.VISIBLE);
+        } // Show progress while loading
+        if (isGuest) loadFromSQLite();
+        else loadFromFirestore();
     }
 
-    // For logged-in users – Load DreamPlaces from Firestore
+    // Load data for logged-in users from Firestore
     private void loadFromFirestore() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
-
+        if (user == null) {
+            progressBar.setVisibility(View.GONE); // Stop if no user
+            return;
+        }
         FirebaseFirestore.getInstance().collection("users")
                 .document(user.getUid())
                 .collection("dream_places")
@@ -191,7 +271,22 @@ public class HomeFragment extends Fragment {
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "Failed to load places", Toast.LENGTH_SHORT).show());
     }
 
-    // Parse Firestore documents into DreamPlace objects
+    // Load data for guest users from local SQLite database
+    private void loadFromSQLite() {
+        Context context = getContext();
+        if (context == null) {
+            progressBar.setVisibility(View.GONE);
+            return;
+        }
+
+        DreamPlaceSQLiteHelper dbHelper = new DreamPlaceSQLiteHelper(requireContext());
+        dreamPlaces.clear();
+        dreamPlaces.addAll(dbHelper.getAllPlacesOrderedByDistance(currentLat, currentLng));
+        sortAndUpdateRecycler();
+        progressBar.setVisibility(View.GONE); // Hide after sorting
+    }
+
+    // Convert Firestore documents to DreamPlace objects
     private void handleFirestoreResults(QuerySnapshot querySnapshot) {
         dreamPlaces.clear();
         for (QueryDocumentSnapshot doc : querySnapshot) {
@@ -216,22 +311,11 @@ public class HomeFragment extends Fragment {
             place.setId(doc.getId());
             dreamPlaces.add(place);
         }
-
         sortAndUpdateRecycler();
+        progressBar.setVisibility(View.GONE); // Hide after sorting
     }
 
-    // For guest users – Load DreamPlaces from SQLite
-    private void loadFromSQLite() {
-        Context context = getContext();
-        if (context == null) return;
-
-        DreamPlaceSQLiteHelper dbHelper = new DreamPlaceSQLiteHelper(requireContext());
-        dreamPlaces.clear();
-        dreamPlaces.addAll(dbHelper.getAllPlacesOrderedByDistance(currentLat, currentLng));
-        sortAndUpdateRecycler();
-    }
-
-    // Sort list by calculated distance and update RecyclerView
+    // Sort list by distance value
     private void sortAndUpdateRecycler() {
         Collections.sort(dreamPlaces, Comparator.comparing(dp -> {
             try {
@@ -243,7 +327,7 @@ public class HomeFragment extends Fragment {
         adapter.updateList(dreamPlaces);
     }
 
-    // Generate time-based greeting
+    // Get greeting string based on current time
     private String getGreetingMessage() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         if (hour >= 5 && hour < 12) return "Good Morning!";
@@ -252,10 +336,9 @@ public class HomeFragment extends Fragment {
         else return "Good Night!";
     }
 
-    // Calculates distance between two lat-lng points (in km)
+    // Utility to calculate distance between two coordinates in km
     private double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
         if (lat1 == 0.0 && lng1 == 0.0) return 9999.0;
-
         float[] results = new float[1];
         Location.distanceBetween(lat1, lng1, lat2, lng2, results);
         return results[0] / 1000.0;

@@ -60,6 +60,10 @@ dependencies {
     implementation (libs.glide)
     annotationProcessor (libs.compiler)
 
+    implementation(libs.photoview)
+
+
+    implementation("com.github.xabaras:RecyclerViewSwipeDecorator:1.3")
 
 }
 

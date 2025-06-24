@@ -11,6 +11,8 @@
     <string name="guest_greeting">Hi, Guest!\n%1$s</string>
     <string name="user_greeting">Hi, %1$s!\n%2$s</string>
 
+    <string name="my_api_key">AIzaSyAw1T7vyj5DvjyH9IFhzfxYnC9YaFfFfvg</string>
+
     <!-- Firebase -->
     <string name="default_web_client_id">876274663474-eeivfavlrajsv1gq38cnf6vfthn99vml.apps.googleusercontent.com</string>
 </resources>
