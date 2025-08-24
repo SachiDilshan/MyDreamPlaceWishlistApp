@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissions required for maps, location, and internet access -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -19,35 +20,37 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyDreamPlaceWishlist"
         tools:targetApi="31">
+        <!-- Activities (screens) in the app -->
         <activity android:name=".ProfileActivity"
-            android:exported="false"/>
+            android:exported="false"/> <!-- Profile screen -->
         <activity
             android:name=".TermsActivity"
-            android:exported="false" />
+            android:exported="false" />  <!-- Terms & Privacy screen -->
         <activity
             android:name=".HelpActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Help & Support screen -->
         <activity
             android:name=".SettingsActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Settings screen -->
         <activity
             android:name=".PhotoViewerActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Fullscreen photo viewer -->
         <activity
             android:name=".MyDreamPlaceActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Edit/view single Dream Place -->
         <activity
             android:name=".MapPickerActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Pick a location on map -->
         <activity
             android:name=".AddDreamPlaceActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Add new Dream Place -->
         <activity
             android:name=".LoginActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Login screen -->
         <activity
             android:name=".SignupActivity"
-            android:exported="false" />
+            android:exported="false" /> <!-- Signup screen -->
+        <!-- Main entry point of the app -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -57,7 +60,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- API Key to Android Project -->
+
+        <!-- Google Maps API key (required for MapFragment/MapPickerActivity) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAw1T7vyj5DvjyH9IFhzfxYnC9YaFfFfvg" />
