@@ -10,10 +10,24 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+/**
+ * TermsActivity
+ * -
+ * Displays the Terms & Privacy screen.
+ * -
+ * Responsibilities:
+ * - Shows a simple header with title and back arrow.
+ * - Applies system bar insets so the toolbar does not overlap the status bar.
+ * - Closes when the back arrow is tapped.
+ * -
+ * Notes:
+ * - Layout must contain: FrameLayout (id=toolbar), back_button (ImageView), header_title (TextView).
+ * - Reuses the same header layout style as Settings and Help screens for consistency.
+ */
 public class TermsActivity extends AppCompatActivity {
 
-    private ImageView backButton;
-    private TextView headerTitle;
+    private ImageView backButton; // Toolbar back arrow
+    private TextView headerTitle; // Toolbar title
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +52,7 @@ public class TermsActivity extends AppCompatActivity {
         headerTitle.setText("Terms & Privacy");
     }
 
+    /** Back arrow closes this screen */
     private void setupToolbar() {
         backButton.setOnClickListener(v -> finish());
     }

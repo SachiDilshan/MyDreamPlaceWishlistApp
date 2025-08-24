@@ -3,6 +3,9 @@
     <style name="Base.Theme.MyDreamPlaceWishlist" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- Edge-to-edge so your toolbar color shows behind the status bar -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="Theme.MyDreamPlaceWishlist" parent="Base.Theme.MyDreamPlaceWishlist" />

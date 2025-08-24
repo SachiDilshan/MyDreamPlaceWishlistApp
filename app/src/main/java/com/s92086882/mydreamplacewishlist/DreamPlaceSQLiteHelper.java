@@ -12,31 +12,39 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-// SQLite helper class for managing guest user dream places
+/**
+ * SQLite helper class for managing Dream Place data when user is in Guest mode.
+ * -
+ * Responsibilities:
+ * - Creates and manages the local SQLite database schema.
+ * - Provides CRUD operations (Create, Read, Update, Delete).
+ * - Handles conversion of DreamPlace model objects to/from SQLite rows.
+ * - Stores photos as a comma-separated list of URIs.
+ */
 public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
 
-    // Database metadata
+    // ----- Database metadata -----
     private static final String DATABASE_NAME = "dream_places.db";
     private static final int DATABASE_VERSION = 1;
 
-    // Table and column names
+    // ----- Table and column names -----
     public static final String TABLE_NAME = "places";
-    public static final String COLUMN_ID = "id"; // Primary key
+    public static final String COLUMN_ID = "id"; // Primary key (autoincrement)
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_CITY = "city";
     public static final String COLUMN_NOTES = "notes";
     public static final String COLUMN_LAT = "latitude";
     public static final String COLUMN_LNG = "longitude";
-    public static final String COLUMN_PHOTOS = "photos"; // Comma-separated list
+    public static final String COLUMN_PHOTOS = "photos"; // Stored as comma-separated string
     public static final String COLUMN_VISITED = "visited"; // 0 = false, 1 = true
     public static final String COLUMN_RATING = "rating"; // float value
 
-    // Constructor
+    // ----- Constructor -----
     public DreamPlaceSQLiteHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
-    // Create table schema
+    // ----- Create table schema -----
     @Override
     public void onCreate(SQLiteDatabase db) {
         String query = "CREATE TABLE " + TABLE_NAME + " (" +
@@ -52,14 +60,15 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
         db.execSQL(query);
     }
 
-    // Handle schema upgrades
+    // ----- Handle schema upgrades -----
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Simple strategy: drop table and recreate
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
 
-    // Insert new dream place into database
+    // ----- Insert new dream place into database -----
     public void addDreamPlace(DreamPlace place, double lat, double lng) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -86,7 +95,7 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                // Read column values
+                // Extract values from row
                 int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID));
                 String name = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_NAME));
                 String city = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_CITY));
@@ -118,7 +127,7 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
         return places;
     }
 
-    // Haversine distance calculation using Android API
+    /** Distance calculation using Android's Location API (Haversine under the hood). */
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         float[] results = new float[1];
         Location.distanceBetween(lat1, lon1, lat2, lon2, results);
@@ -146,7 +155,12 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    // Optional helper to remove a photo from a place by ID and update DB
+    /**
+     * Delete a single photo from a place (identified by placeId).
+     * - Reads the existing photo list.
+     * - Removes the matching URI.
+     * - Updates the row with the new list.
+     */
     public void deletePhotoFromPlace(String placeId, String photoToDelete) {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(TABLE_NAME, null, COLUMN_ID + "=?", new String[]{placeId}, null, null, null);
@@ -167,21 +181,24 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    // Delete a dream place permanently by ID (used for swipe-to-delete)
+    /** Delete a dream place permanently by ID. (Used for swipe-to-delete) */
     public void deleteDreamPlaceById(String placeId) {
         if (placeId == null) return;
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_NAME, COLUMN_ID + "=?", new String[]{placeId});
         db.close();
     }
-    // Delete a dream place by its name (used during swipe-to-delete for guest users)
+    /** Delete a dream place permanently by Name. (Fallback for guest user swipe-to-delete) */
     public void deleteDreamPlaceByName(String name) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_NAME, COLUMN_NAME + "=?", new String[]{name});
         db.close();
     }
 
-    // Return all dream places without calculating distance (for use in Map view)
+    /**
+     * Return all dream places without distance (used for Map view).
+     * - Same as getAllPlacesOrderedByDistance() but skips distance calculation.
+     */
     public List<DreamPlace> getAllDreamPlaces() {
         List<DreamPlace> places = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -204,7 +221,6 @@ public class DreamPlaceSQLiteHelper extends SQLiteOpenHelper {
                         ? new ArrayList<>()
                         : Arrays.asList(photosStr.split(","));
 
-                // No need to calculate distance here
                 DreamPlace place = new DreamPlace(photoPaths, name, city, "", visited, rating, lat, lng, notes);
                 place.setId(String.valueOf(id));
                 places.add(place);

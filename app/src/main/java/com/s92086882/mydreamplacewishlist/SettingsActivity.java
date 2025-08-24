@@ -10,10 +10,18 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+/**
+ * Simple Settings screen scaffold.
+ * -
+ * Responsibilities:
+ * - Displays a custom toolbar with a back arrow and title.
+ * - Applies edge-to-edge window insets so the toolbar avoids the status bar/cutouts.
+ * - Provides a hook (setupListeners) to add actual settings interactions later.
+ */
 public class SettingsActivity extends AppCompatActivity {
 
-    private ImageView backButton;
-    private TextView headerTitle;
+    private ImageView backButton; // left arrow icon in the toolbar
+    private TextView headerTitle; // centered title text
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,11 +36,12 @@ public class SettingsActivity extends AppCompatActivity {
             return insets;
         });
 
-        initViews();
-        setupToolbar();
+        initViews(); // bind views and set title
+        setupToolbar(); // wire back navigation
         setupListeners(); // optional: for more interactivity
     }
 
+    /** Bind UI references from layout and set the header title. */
     private void initViews() {
         backButton = findViewById(R.id.back_button);
         headerTitle = findViewById(R.id.header_title);
@@ -45,6 +54,6 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        // Add more interactions here later
+        // Add more interactions here
     }
 }

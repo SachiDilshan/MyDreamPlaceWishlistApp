@@ -37,8 +37,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Activity for viewing and editing a saved Dream Place.
- * Displays name, city, notes, photos, visited status, rating, and a map location.
+ * Detail/Edit screen for a single Dream Place.
+ * -
+ * Shows:
+ * - Name, City, Notes
+ * - Horizontal photo gallery (tap → full screen view / delete)
+ * - Visited toggle + optional rating
+ * - Embedded map pointing to the saved coordinates
+ * -
+ * Saves:
+ * - Guest: updates SQLite via DreamPlaceSQLiteHelper
+ * - Logged-in: updates Firestore document (and keeps photos list in sync)
+ * -
+ * Notes:
+ * - Intent extra key may be "dream_place" (Search) or "dreamPlace" (Home).
+ * - MapView uses manual lifecycle forwarding (onResume/onPause/…).
+ * - Firestore field name used below is "photoPaths"; creation code elsewhere uses "photos".
+ *   Keep your reads/writes consistent app-wide to avoid mismatches.
  */
 public class MyDreamPlaceActivity extends AppCompatActivity {
 
@@ -51,10 +66,10 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
 
     // Adapters and data
     private PhotoAdapter photoAdapter;
-    private DreamPlace dreamPlace;
-    private List<Uri> photoUris;
+    private DreamPlace dreamPlace; // model passed in via Intent
+    private List<Uri> photoUris; // working list of image URIs (for adapter)
 
-    // Auth/DB
+    // --- Auth / DB helpers ---
     private boolean isGuest;
     private FirebaseAuth mAuth;
     private FirebaseFirestore firestore;
@@ -64,6 +79,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
     private MapView mapView;
     private GoogleMap googleMap;
 
+    // --- Result handling for full-screen photo viewer ---
     private static final int REQUEST_PHOTO_VIEW = 101;
     private int lastViewedPosition = -1;
 
@@ -73,7 +89,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_my_dream_place);
 
-        // Add top padding for status bar
+        // Add top padding for status bar to avoid status bar overlap
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         ViewCompat.setOnApplyWindowInsetsListener(toolbar, (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -89,10 +105,11 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
 
         initViews();
         setupToolbar();
-        loadPlaceDataFromIntent();
+        loadPlaceDataFromIntent(); // populate UI + map + photos
         setupListeners();
     }
 
+    /** Bind view references and basic Recycler/Map setup */
     private void initViews() {
         nameEditText = findViewById(R.id.editTextName);
         cityEditText = findViewById(R.id.editTextCity);
@@ -102,11 +119,14 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         ratingBar = findViewById(R.id.ratingBar);
         saveButton = findViewById(R.id.saveButton);
 
+        // Horizontal photo strip
         photoRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        // MapView requires explicit lifecycle forwarding; using null for saved state (keeps it simple)
         mapView = findViewById(R.id.mapView);
         mapView.onCreate(null);
     }
 
+    /** Configure toolbar (back button + share menu) */
     private void setupToolbar() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -114,6 +134,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
         toolbar.setNavigationOnClickListener(v -> finish());
+        // Share button lives in menu_share.xml
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() == R.id.action_share) {
                 sharePlace();
@@ -123,15 +144,22 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         });
     }
 
+    /** Inflate the share menu into the toolbar */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_share, menu);
         return true;
     }
 
+    /**
+     * Read DreamPlace passed via Intent and hydrate the UI + map + gallery.
+     * - Supports two extras names: "dream_place" (from Search) or "dreamPlace" (from Home).
+     * - Prepares PhotoAdapter and click-to-view/delete flow.
+     * - Sets up MapView camera + marker to this place.
+     */
     private void loadPlaceDataFromIntent() {
         Intent intent = getIntent();
-        // Try "dream_place" (used in Search)
+        // Some parts of the app use "dream_place" (e.g., Search results)
         if (intent != null && intent.hasExtra("dream_place")) {
             dreamPlace = (DreamPlace) intent.getSerializableExtra("dream_place");
         }
@@ -160,7 +188,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
                 photoAdapter = new PhotoAdapter(photoUris);
                 photoRecyclerView.setAdapter(photoAdapter);
 
-                // Handle image click → full screen
+                // On photo tap → open full screen viewer (with potential delete)
                 photoAdapter.setOnPhotoClickListener((position, uri) -> {
                     lastViewedPosition = position;
                     Intent viewerIntent = new Intent(MyDreamPlaceActivity.this, PhotoViewerActivity.class);
@@ -180,7 +208,9 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         }
     }
 
+    /** Wire interactive bits (toggle rating visibility, Save button) */
     private void setupListeners() {
+        // Show rating bar only if "Visited" is checked
         visitedCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             ratingBar.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
@@ -188,6 +218,11 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         saveButton.setOnClickListener(v -> saveUpdatedPlace());
     }
 
+    /**
+     * Collect edits from UI, write back to local DB (guest) or Firestore (logged-in).
+     * - Also syncs photo list in memory with adapter contents.
+     * - Validates required fields (name + city).
+     */
     private void saveUpdatedPlace() {
         String name = nameEditText.getText().toString().trim();
         String city = cityEditText.getText().toString().trim();
@@ -200,6 +235,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
             return;
         }
 
+        // Update in-memory model first
         dreamPlace.setName(name);
         dreamPlace.setCity(city);
         dreamPlace.setNotes(notes);
@@ -225,6 +261,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
                 return;
             }
 
+            // Prepare partial update map
             Map<String, Object> updated = new HashMap<>();
             updated.put("name", name);
             updated.put("city", city);
@@ -246,6 +283,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         }
     }
 
+    /** Share this place via a text intent (includes Google Maps link) */
     private void sharePlace() {
         if (dreamPlace == null) return;
 
@@ -264,7 +302,11 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
         startActivity(Intent.createChooser(shareIntent, "Share via"));
     }
 
-    // Handle PhotoViewerActivity result (delete photo)
+    /**
+     * Handle return from PhotoViewerActivity.
+     * - If user deleted a photo there, remove it here, notify adapter, and persist change.
+     * - If no more photos remain, we optionally finish() to return to previous screen.
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -299,7 +341,7 @@ public class MyDreamPlaceActivity extends AppCompatActivity {
             }
         }
     }
-    // Lifecycle for mapView
+    // --- MapView lifecycle forwarding (required for embedded Google Maps) ---
     @Override
     protected void onResume() {
         super.onResume();

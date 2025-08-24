@@ -44,6 +44,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * HomeFragment displays the main list of Dream Places.
+ *
+ * Responsibilities:
+ * - Shows greeting with time + user name (if logged in).
+ * - Lists Dream Places in a RecyclerView, ordered by distance.
+ * - Supports swipe-to-delete with Undo.
+ * - Provides FAB to add new places.
+ * - Handles guest vs logged-in user data (SQLite vs Firestore).
+ * - Fetches live location for distance calculation.
+ */
 public class HomeFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -51,13 +62,14 @@ public class HomeFragment extends Fragment {
     private final List<DreamPlace> dreamPlaces = new ArrayList<>();
     private boolean isGuest;
 
+    // Current location state
     private double currentLat = 0.0, currentLng = 0.0;
     private boolean locationLoaded = false;
     private ProgressBar progressBar;
 
     private FusedLocationProviderClient fusedLocationClient;
 
-    // Activity result launcher for returning from detail screen
+    // Launcher for opening MyDreamPlaceActivity and refreshing when returning
     private final ActivityResultLauncher<Intent> dreamPlaceLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> loadData()
@@ -80,11 +92,11 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        // Light status bar text
+        // Force light status bar text for better visibility on white background
         requireActivity().getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 
         progressBar = view.findViewById(R.id.progressBar);
-        progressBar.bringToFront();
+        progressBar.bringToFront(); // ensures it overlays RecyclerView
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext());
 
@@ -93,11 +105,11 @@ public class HomeFragment extends Fragment {
         ImageView avatarIcon = view.findViewById(R.id.avatarIcon);
         String greetingTime = getGreetingMessage();
 
-        // Detect login type
+        // Detect login type from SharedPreferences
         SharedPreferences prefs = requireContext().getSharedPreferences("auth", Context.MODE_PRIVATE);
         isGuest = prefs.getBoolean("isGuest", true);
 
-        // Set greeting
+        // Greeting message differs for guest vs logged-in
         if (isGuest) greetingText.setText(getString(R.string.guest_greeting, greetingTime));
         else {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -120,12 +132,12 @@ public class HomeFragment extends Fragment {
             if (isGuest) startActivity(new Intent(getContext(), LoginActivity.class));
         });
 
-        // RecyclerView setup
+        // RecyclerView setup for Dream Places
         recyclerView = view.findViewById(R.id.recyclerViewDreamPlaces);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new DreamPlaceAdapter(requireContext(), dreamPlaces, place -> {
             Intent intent = new Intent(getContext(), MyDreamPlaceActivity.class);
-            intent.putExtra("dreamPlace", place);
+            intent.putExtra("dreamPlace", place); // pass model via Serializable
             dreamPlaceLauncher.launch(intent);
         });
         recyclerView.setAdapter(adapter);
@@ -133,6 +145,7 @@ public class HomeFragment extends Fragment {
         // Enable swipe-to-delete gesture
         setupSwipeToDelete();
 
+        // Launcher for AddDreamPlaceActivity
         final ActivityResultLauncher<Intent> addPlaceLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -141,7 +154,7 @@ public class HomeFragment extends Fragment {
                 }
         );
 
-        // FAB for adding new dream place
+        // Floating Action Button for adding new places
         FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(getContext(), AddDreamPlaceActivity.class);
@@ -153,7 +166,7 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
-    // Enables swipe-to-delete with icon, background and text
+    /** Configure swipe-to-delete with custom background, icon, and Undo option. */
     private void setupSwipeToDelete() {
         ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             @Override
@@ -170,7 +183,7 @@ public class HomeFragment extends Fragment {
                 dreamPlaces.remove(position);
                 adapter.notifyItemRemoved(position);
 
-                // Show Snackbar with Undo
+                // Show Snackbar with Undo option
                 Snackbar.make(recyclerView, "Place deleted", Snackbar.LENGTH_LONG)
                         .setAction("Undo", v -> {
                             // Restore on undo
@@ -205,6 +218,7 @@ public class HomeFragment extends Fragment {
             public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView,
                                     @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY,
                                     int actionState, boolean isCurrentlyActive) {
+                // Red background + delete icon + text during swipe
                 new RecyclerViewSwipeDecorator.Builder(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
                         .addActionIcon(R.drawable.ic_delete_red)
                         .addSwipeLeftLabel("<- Delete")
@@ -218,14 +232,14 @@ public class HomeFragment extends Fragment {
     }
 
 
-    // Check and request location permission if not already granted
+    /** Check location permission and request if missing. */
     private void checkLocationPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) fetchLiveLocation();
         else locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
-    // Fetch live GPS location to calculate distances
+    /** Fetch live location using FusedLocationProviderClient. */
     private void fetchLiveLocation() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -256,7 +270,7 @@ public class HomeFragment extends Fragment {
         else loadFromFirestore();
     }
 
-    // Load data for logged-in users from Firestore
+    /** Fetch data from Firestore for logged-in users. */
     private void loadFromFirestore() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
@@ -271,7 +285,7 @@ public class HomeFragment extends Fragment {
                 .addOnFailureListener(e -> Toast.makeText(getContext(), "Failed to load places", Toast.LENGTH_SHORT).show());
     }
 
-    // Load data for guest users from local SQLite database
+    /** Fetch data from SQLite for guest users. */
     private void loadFromSQLite() {
         Context context = getContext();
         if (context == null) {
@@ -286,7 +300,7 @@ public class HomeFragment extends Fragment {
         progressBar.setVisibility(View.GONE); // Hide after sorting
     }
 
-    // Convert Firestore documents to DreamPlace objects
+    /** Convert Firestore docs into DreamPlace objects and update RecyclerView. */
     private void handleFirestoreResults(QuerySnapshot querySnapshot) {
         dreamPlaces.clear();
         for (QueryDocumentSnapshot doc : querySnapshot) {
@@ -308,26 +322,26 @@ public class HomeFragment extends Fragment {
             String distanceStr = String.format("%.1f km away", distance);
 
             DreamPlace place = new DreamPlace(photoUrls, name, city, distanceStr, isVisited, rating, lat, lng, notes);
-            place.setId(doc.getId());
+            place.setId(doc.getId()); // Firestore document ID
             dreamPlaces.add(place);
         }
         sortAndUpdateRecycler();
         progressBar.setVisibility(View.GONE); // Hide after sorting
     }
 
-    // Sort list by distance value
+    /** Sort places by numeric distance value and refresh RecyclerView. */
     private void sortAndUpdateRecycler() {
         Collections.sort(dreamPlaces, Comparator.comparing(dp -> {
             try {
                 return Float.parseFloat(dp.getDistance().replace(" km away", ""));
             } catch (Exception e) {
-                return 9999f;
+                return 9999f; // fallback for missing/invalid distance
             }
         }));
         adapter.updateList(dreamPlaces);
     }
 
-    // Get greeting string based on current time
+    /** Get greeting based on time of day. */
     private String getGreetingMessage() {
         int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
         if (hour >= 5 && hour < 12) return "Good Morning!";
@@ -336,7 +350,7 @@ public class HomeFragment extends Fragment {
         else return "Good Night!";
     }
 
-    // Utility to calculate distance between two coordinates in km
+    /** Utility: calculate distance in km between two lat/lng pairs. */
     private double calculateDistance(double lat1, double lng1, double lat2, double lng2) {
         if (lat1 == 0.0 && lng1 == 0.0) return 9999.0;
         float[] results = new float[1];

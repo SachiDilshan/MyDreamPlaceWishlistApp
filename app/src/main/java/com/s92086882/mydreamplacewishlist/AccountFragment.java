@@ -53,6 +53,8 @@ public class AccountFragment extends Fragment {
         btnSettings = view.findViewById(R.id.btn_settings);
         btnHelp = view.findViewById(R.id.btn_help);
         btnTerms = view.findViewById(R.id.btn_terms);
+        TextView userNameText = view.findViewById(R.id.text_user_name);
+        View avatar = view.findViewById(R.id.image_avatar);
 
         // Check if user is a guest
         SharedPreferences prefs = requireContext().getSharedPreferences("auth", Context.MODE_PRIVATE);
@@ -71,6 +73,13 @@ public class AccountFragment extends Fragment {
                         .addOnSuccessListener(this::displayUserName);
             }
         }
+
+        // Open "Your profile" when tapping name or avatar
+        View.OnClickListener openProfile = v -> {
+            startActivity(new Intent(requireContext(), ProfileActivity.class));
+        };
+        userNameText.setOnClickListener(openProfile);
+        if (avatar != null) avatar.setOnClickListener(openProfile);
 
         // Handle Settings click (optional: replace with actual activity)
         btnSettings.setOnClickListener(v -> {

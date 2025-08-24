@@ -5,22 +5,37 @@ import java.util.List;
 
 /**
  * Model class representing a Dream Place entry.
- * Used for both Firestore (logged-in users) and SQLite (guest users).
+ * -
+ * Responsibilities:
+ * - Holds all properties for a "dream place" (name, city, notes, photos, etc.).
+ * - Works as a transfer object for both SQLite (guest users) and Firestore (logged-in users).
+ * - Implements Serializable → allows passing DreamPlace objects through Intents/Bundle between Activities.
  */
+
 public class DreamPlace implements Serializable {
 
-    private String id; // Firestore document ID or SQLite row ID (as string)
+    private String id; // Firestore document ID or SQLite row ID (converted to String for consistency)
+
+    // Basic details
     private String name;
     private String city;
     private String notes;
-    private List<String> photoPaths;
-    private boolean visited;
-    private float rating;
-    private double latitude;
-    private double longitude;
-    private String distance; // e.g., "2.5 km away"
 
-    // Full Constructor
+    // Photos (as local URIs in SQLite or remote URLs in Firestore)
+    private List<String> photoPaths;
+
+    // Extra metadata
+    private boolean visited; // Whether the user has marked this place as visited
+    private float rating; // User’s personal rating (0–5 stars typically)
+    private double latitude; // Stored for map integration
+    private double longitude;
+    private String distance; // Pre-computed distance string (e.g., "2.5 km away")
+
+    /**
+     * Full constructor:
+     * - Used when creating new DreamPlace objects programmatically (e.g., after saving/fetching).
+     * - Parameters include all core fields.
+     */
     public DreamPlace(List<String> photoPaths, String name, String city, String distance,
                       boolean visited, float rating, double latitude, double longitude, String notes) {
         this.name = name;
@@ -34,7 +49,8 @@ public class DreamPlace implements Serializable {
         this.distance = distance;
     }
 
-    // Getters
+    // ----- Getters -----
+    // Provide read access to private fields (required by adapters, UI, Firestore mapping, etc.)
     public String getId() {
         return id;
     }
@@ -66,7 +82,8 @@ public class DreamPlace implements Serializable {
         return distance;
     }
 
-    // Setters
+    // ----- Setters -----
+    // Allow updating model properties (important for editing Dream Places).
     public void setId(String id) {
         this.id = id;
     }

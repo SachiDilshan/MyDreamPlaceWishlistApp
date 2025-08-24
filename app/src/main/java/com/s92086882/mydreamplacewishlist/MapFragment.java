@@ -30,6 +30,19 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
+/**
+ * MapFragment shows a Google Map with markers for all Dream Places.
+ * -
+ * Responsibilities:
+ * - Initialize GoogleMap via child SupportMapFragment.
+ * - Enable "My Location" (if permission granted) and center camera on user.
+ * - Load markers from Firestore (logged-in) or SQLite (guest).
+ * - Customize marker icon based on "visited" status.
+ * -
+ * Notes:
+ * - Permissions: Location permission is checked; if not granted, map still loads without blue dot.
+ * - Lifecycle: Map setup occurs in onMapReady() after async initialization.
+ */
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -49,10 +62,11 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getChildFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
+            // onMapReady() will be invoked asynchronously when the map is ready to use
             mapFragment.getMapAsync(this);
         }
 
-        // Initialize location provider
+        // FusedLocationProviderClient for user location (lightweight client)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         // Check if user is logged in or a guest
@@ -62,6 +76,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         return view;
     }
 
+    /** Called when the GoogleMap instance is ready for interaction. */
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
@@ -78,10 +93,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         ViewGroup.MarginLayoutParams layoutParams =
                 (ViewGroup.MarginLayoutParams) locationButton.getLayoutParams();
-        layoutParams.setMargins(0, 200, 30, 0); // Adjust top margin as needed
+        layoutParams.setMargins(0, 200, 30, 0); // push down from top; adjust as needed
         locationButton.setLayoutParams(layoutParams);
 
-        // Load dream place markers
+        // Load markers from the appropriate data source
         if (isGuest) {
             loadFromSQLite();
         } else {
@@ -89,17 +104,22 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+    /**
+     * Enables the blue "My Location" dot (if permission granted) and moves camera to last location.
+     * SuppressLint: method checks permission before calling setMyLocationEnabled(true).
+     */
     @SuppressLint("MissingPermission")
     private void enableLocationAndZoom() {
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
-            // Permission not granted – location won't be enabled
+            // Permission not granted → skip enabling location layer
             return;
         }
 
+        // Show the user's location dot and "My Location" button on the map
         mMap.setMyLocationEnabled(true);
 
-        // Zoom into current location
+        // Center map on the user’s last known location (quick, may be stale)
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(location -> {
                     if (location != null) {

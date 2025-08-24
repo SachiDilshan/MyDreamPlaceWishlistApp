@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <application
         android:allowBackup="true"
@@ -18,6 +19,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyDreamPlaceWishlist"
         tools:targetApi="31">
+        <activity android:name=".ProfileActivity"
+            android:exported="false"/>
         <activity
             android:name=".TermsActivity"
             android:exported="false" />
@@ -53,7 +56,8 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- API Key to Android Project -->
+        </activity>
+        <!-- API Key to Android Project -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAw1T7vyj5DvjyH9IFhzfxYnC9YaFfFfvg" />

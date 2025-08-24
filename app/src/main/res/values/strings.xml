@@ -11,6 +11,9 @@
     <string name="guest_greeting">Hi, Guest!\n%1$s</string>
     <string name="user_greeting">Hi, %1$s!\n%2$s</string>
 
+    <string name="cd_profile_avatar">Profile avatar</string>
+
+    <!-- Google Map api key -->
     <string name="my_api_key">AIzaSyAw1T7vyj5DvjyH9IFhzfxYnC9YaFfFfvg</string>
 
     <!-- Firebase -->

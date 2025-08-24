@@ -34,16 +34,30 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * LoginActivity handles three modes of authentication:
+ * 1) Email/Password (Firebase Authentication).
+ * 2) Google Sign-In (Firebase Auth + Firestore profile creation).
+ * 3) Guest login (data stored locally via SQLite).
+ * -
+ * Features:
+ * - Toggle password visibility with an eye icon.
+ * - "Forgot password" reset using Firebase.
+ * - "Sign up" clickable text redirects to SignupActivity.
+ * - Persists login state with SharedPreferences ("isGuest" flag).
+ */
 public class LoginActivity extends AppCompatActivity {
 
+    // UI Elements
     private EditText emailEditText, passwordEditText;
     private Button loginButton, guestLoginButton;
-    private LinearLayout googleLoginButton;
+    private LinearLayout googleLoginButton; // custom Google sign-in button
     private TextView signupRedirect;
 
+    // Firebase + Google Sign-In
     private FirebaseAuth mAuth;
     private GoogleSignInClient googleSignInClient;
-    private static final int RC_GOOGLE_SIGN_IN = 9002;
+    private static final int RC_GOOGLE_SIGN_IN = 9002; // Request code for Google Intent
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +65,7 @@ public class LoginActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_login);
 
+        // Handle system bar insets (padding)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -70,7 +85,7 @@ public class LoginActivity extends AppCompatActivity {
         TextView forgotPasswordTextView = findViewById(R.id.forgotPasswordTextView);
         TextView signupRedirect = findViewById(R.id.signupRedirectTextView);
 
-        // Styled clickable "Sign up" text only
+        // ----- Clickable "Sign up" text -----
         String fullText = "Don't have an account? Sign up";
         SpannableString spannable = new SpannableString(fullText);
         int start = fullText.indexOf("Sign up");
@@ -80,7 +95,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View widget) {
                 startActivity(new Intent(LoginActivity.this, SignupActivity.class));
-                finish();
+                finish(); // close login after redirect
             }
             @Override
             public void updateDrawState(TextPaint ds) {
@@ -99,7 +114,7 @@ public class LoginActivity extends AppCompatActivity {
         // Eye icon click listener to toggle password visibility
         passwordEditText.setOnTouchListener(this::visibilityToggle);
 
-        // Password reset
+        // ----- Forgot password -----
         forgotPasswordTextView.setOnClickListener(v -> {
             String email = emailEditText.getText().toString().trim();
 
@@ -123,7 +138,7 @@ public class LoginActivity extends AppCompatActivity {
                     });
         });
 
-        // Configure Google Sign-In
+        // ----- Configure Google Sign-In -----
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))  // from google-services.json
                 .requestEmail()
@@ -137,7 +152,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Email/Password Login
+     * Email + Password Firebase Sign-In
      */
     private void signInWithEmail() {
         String email = emailEditText.getText().toString().trim();
@@ -180,7 +195,7 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Continue as Guest User
+     * Continue as Guest User: no Firebase, mark session as guest
      */
     private void continueAsGuest() {
         getSharedPreferences("auth", MODE_PRIVATE).edit().putBoolean("isGuest", true).apply();
@@ -243,14 +258,15 @@ public class LoginActivity extends AppCompatActivity {
                 .set(userData);
     }
 
+    /** Toggle password visibility when eye icon tapped */
     private boolean visibilityToggle(View v, MotionEvent event) {
-        final int DRAWABLE_END = 2;
+        final int DRAWABLE_END = 2; // index for right compound drawable
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (event.getRawX() >= (passwordEditText.getRight() - passwordEditText.getCompoundDrawables()[DRAWABLE_END].getBounds().width())) {
                 int inputType = passwordEditText.getInputType();
                 boolean isPasswordVisible = (inputType & InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
 
-                // Toggle input type
+                // Toggle input type between visible and hidden
                 passwordEditText.setInputType(isPasswordVisible ?
                         InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD :
                         InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);

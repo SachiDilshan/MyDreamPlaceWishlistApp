@@ -26,6 +26,19 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * SignupActivity handles user registration.
+ * -
+ * Features:
+ * - Register using Email/Password with validation rules.
+ * - Google Sign-In (OAuth) integration with Firebase.
+ * - Saves user profile info (first/last name, email) to Firestore.
+ * - Toggles password visibility with an eye icon.
+ * - Redirects to LoginActivity or MainActivity after signup.
+ * -
+ * SharedPreferences:
+ * - Updates "isGuest" = false after successful signup.
+ */
 public class SignupActivity extends AppCompatActivity {
 
     // UI Components
@@ -82,10 +95,9 @@ public class SignupActivity extends AppCompatActivity {
         googleSignInClient = GoogleSignIn.getClient(this, gso);
     }
 
-
-
     /**
-     * Handles Email/Password signup and saves profile to Firestore
+     * Create new Firebase user with email/password.
+     * Validates all fields before signup and stores user profile in Firestore.
      */
     private void createAccountWithEmail() {
         String email = emailEditText.getText().toString().trim();
@@ -97,7 +109,7 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        // Validate email
+        // Validate email: Email required and correct format
         if (TextUtils.isEmpty(email)) {
             emailEditText.setError("Email is required");
             return;
@@ -121,7 +133,7 @@ public class SignupActivity extends AppCompatActivity {
             return;
         }
 
-        // Create user
+        // Create Firebase user
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -131,7 +143,7 @@ public class SignupActivity extends AppCompatActivity {
                                 .putBoolean("isGuest", false)
                                 .apply();
 
-                        // Save user data
+                        // Save user data to Firestore
                         FirebaseUser user = mAuth.getCurrentUser();
                         saveUserProfileToFirestore(user);
 
@@ -212,17 +224,22 @@ public class SignupActivity extends AppCompatActivity {
                 );
     }
 
+    /**
+     * Toggles password visibility when user taps eye icon in EditText.
+     */
     private boolean visibilityToggle(View v, MotionEvent event) {
-        final int DRAWABLE_END = 2;
+        final int DRAWABLE_END = 2;  // index for right compound drawable
         if (event.getAction() == MotionEvent.ACTION_UP) {
             if (event.getRawX() >= (passwordEditText.getRight()
                     - passwordEditText.getCompoundDrawables()[DRAWABLE_END].getBounds().width())) {
 
+                // Flip visibility state
                 isPasswordVisible = !isPasswordVisible;
                 passwordEditText.setInputType(isPasswordVisible ?
                         InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD :
                         InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
+                // Update icon accordingly
                 passwordEditText.setCompoundDrawablesWithIntrinsicBounds(
                         0, 0,
                         isPasswordVisible ? R.drawable.ic_eye_open : R.drawable.ic_eye_closed,

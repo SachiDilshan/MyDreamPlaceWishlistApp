@@ -17,23 +17,37 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * RecyclerView Adapter for displaying DreamPlace items.
+ * -
+ * Responsibilities:
+ * - Binds DreamPlace model objects to the RecyclerView (list/grid UI).
+ * - Loads place photo, name, city, distance, visited tag, and rating.
+ * - Handles item click events via a listener interface.
+ * - Supports refreshing the dataset and removing items by ID (for swipe-to-delete).
+ */
 public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.ViewHolder> {
 
     private final Context context;
     private List<DreamPlace> dreamPlaceList;
     private final OnItemClickListener listener;
 
-    // Interface for item clicks
+    /**
+     * Interface for click events on list items.
+     * Implemented by HomeFragment (or caller) to open details of a place.
+     */
     public interface OnItemClickListener {
         void onItemClick(DreamPlace place);
     }
 
+    /** Constructor for adapter */
     public DreamPlaceAdapter(Context context, List<DreamPlace> dreamPlaceList, OnItemClickListener listener) {
         this.context = context;
         this.dreamPlaceList = dreamPlaceList;
         this.listener = listener;
     }
 
+    /** Inflate layout for a single item row */
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -41,6 +55,7 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
         return new ViewHolder(view);
     }
 
+    /** Bind data from DreamPlace object into UI elements */
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         DreamPlace place = dreamPlaceList.get(position);
@@ -50,9 +65,9 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
             String photo = place.getPhotoPaths().get(0);
             Glide.with(context)
                     .load(Uri.parse(photo))
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .placeholder(R.drawable.ic_launcher_background)
-                    .error(R.drawable.ic_launcher_background)
+                    .diskCacheStrategy(DiskCacheStrategy.ALL) // caches original & resized versions
+                    .placeholder(R.drawable.ic_launcher_background) // shown while loading
+                    .error(R.drawable.ic_launcher_background)  // fallback on error
                     .into(holder.imageViewPlace);
         } else {
             holder.imageViewPlace.setImageResource(R.drawable.ic_launcher_background);
@@ -86,6 +101,7 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
         holder.itemView.setOnClickListener(v -> listener.onItemClick(place));
     }
 
+    /** Return number of items in list */
     @Override
     public int getItemCount() {
         return dreamPlaceList.size();
@@ -97,7 +113,12 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
         notifyDataSetChanged();
     }
 
-    // Used to remove a place from list by Firestore document ID
+    /**
+     * Remove a place from the list using its Firestore document ID.
+     * - Called after deleting item from Firestore/SQLite.
+     * - Uses iterator to safely remove while looping.
+     * - Calls notifyItemRemoved() for RecyclerView animations.
+     */
     public void removePlaceById(String placeId) {
         if (placeId == null) return;
         Iterator<DreamPlace> iterator = dreamPlaceList.iterator();
@@ -114,7 +135,10 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
         }
     }
 
-    // ViewHolder class to reference item_dream_place views
+    /**
+     * ViewHolder class holds references to views inside item_dream_place.xml.
+     * Improves performance by avoiding repeated findViewById() calls.
+     */
     static class ViewHolder extends RecyclerView.ViewHolder {
         ImageView imageViewPlace, iconVisited, iconStar;
         TextView textViewPlaceName, textViewCity, textViewDistance, textViewVisited, textViewRating;
@@ -127,10 +151,12 @@ public class DreamPlaceAdapter extends RecyclerView.Adapter<DreamPlaceAdapter.Vi
             textViewCity = itemView.findViewById(R.id.textViewCity);
             textViewDistance = itemView.findViewById(R.id.textViewDistance);
 
+            // "Visited" tag group
             iconVisited = itemView.findViewById(R.id.imageViewVisitedIcon);
             textViewVisited = itemView.findViewById(R.id.textViewVisited);
             visitedContainer = (View) textViewVisited.getParent();
 
+            // Rating group
             iconStar = itemView.findViewById(R.id.imageViewRatingIcon);
             textViewRating = itemView.findViewById(R.id.textViewRating);
             ratingContainer = (View) textViewRating.getParent();
